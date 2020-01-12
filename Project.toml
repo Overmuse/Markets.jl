@@ -1,0 +1,11 @@
+name = "Markets"
+uuid = "e289261d-1a32-4d56-985b-5cdfc675b408"
+authors = ["Sebastian Rollen <sebastian.rollen@betterment.com>"]
+version = "0.1.0"
+
+[deps]
+BusinessDays = "4f18b42c-503e-5345-9536-bb0f25fc7038"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+IEX = "cd525e0c-0e7d-405c-8c0d-80eae073af02"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+TradingBase = "1e56c13b-5444-4379-9737-7aa7ad39eab5"
