@@ -1,7 +1,7 @@
 name = "Markets"
 uuid = "e289261d-1a32-4d56-985b-5cdfc675b408"
 authors = ["Sebastian Rollen <sebastian.rollen@betterment.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 BusinessDays = "4f18b42c-503e-5345-9536-bb0f25fc7038"
