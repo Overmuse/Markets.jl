@@ -25,55 +25,41 @@ struct AlphaVantage <: MarketDataProvider end
 
 export Market, Daily, Minutely, Tick, OHLC, Close, BidAsk, tick!, get_clock, get_price, get_dividend, generate_market
 
+@enum MarketState PreOpen Open Closed
+
 struct Market{R, Q} <: AbstractMarket where {R <: AbstractResolution, Q <: AbstractQuoteType}
     resolution :: R
     quote_type :: Q
-    state :: Base.RefValue{Int64}
-    open :: Base.RefValue{Bool}
+    tick_state :: Base.RefValue{Int}
+    market_state :: Base.RefValue{MarketState}
     timestamps :: Vector{DateTime}
     assets :: Vector{String}
     prices :: Dict{String, Vector{Float64}}
     events :: Dict{String, <:NamedTuple}
 end
 
-function generate_market(assets, range; warmup = 0)
-    prices = Dict{String, Vector{Float64}}()
-    events = Dict{String, NamedTuple}()
-    dates = Dict{String, Vector{DateTime}}()
-    #start_date = advancebdays(BusinessDays.USNYSE(), start_date, -warmup)
-    @showprogress for asset in assets
-        quotes = get_historical(asset, range)
-        divs = get_dividends(asset, range)
-        prices[asset] = getindex.(quotes, "close")
-        dates[asset] = Date.(getindex.(quotes, "date"))
-        events[asset] = (dividends = Dict(Date.(getindex.(divs, "paymentDate")) .=> getindex.(divs, "amount")),)
-    end
-    if !all(x -> x == first(values(dates)), values(dates))
-        @warn "Missing data for at least one ticker"
-    end
-    Market(Daily(), Close(), Ref(warmup+1), Ref(true), first(values(dates)), assets, prices, events)
-end
-
-Market(R, Q, timestamps, assets, prices, events) = Market(R, Q, Ref(1), Ref(true), timestamps, assets, prices, events)
+Market(R, Q, timestamps, assets, prices, events) = Market(R, Q, Ref(1), Ref(PreOpen), timestamps, assets, prices, events)
 
 function tick!(m::AbstractMarket)
     if get_clock(m) != last(m.timestamps)
-        if Date(m.timestamps[m.state[] + 1]) != get_clock(m)
+        if Date(m.timestamps[m.tick_state[] + 1]) != Date(get_clock(m))
             if is_open(m)
-                m.open[] = false
+                m.market_state[] = Closed
+            elseif m.market_state[] == PreOpen
+                m.market_state[] = Open
             else
-                m.open[] = true
-                m.state[] += 1
+                m.tick_state[] += 1
+                m.market_state = PreOpen
             end
         else
-            m.state += 1
+            m.tick_state[] += 1
         end
     end
     return nothing
 end
 
-is_open(m::AbstractMarket) = m.open[]
-get_clock(m::AbstractMarket) = m.timestamps[m.state[]]
+is_open(m::AbstractMarket) = m.market_state[] == Open
+get_clock(m::AbstractMarket) = m.timestamps[m.tick_state[]]
 
 function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     if symbol ∉ m.assets
@@ -101,8 +87,8 @@ function get_dividend(m::AbstractMarket, symbol::String, d::DateTime)
 end
 
 function reset!(m::AbstractMarket)
-    m.state[] = 1
-    m.open[] = true
+    m.tick_state[] = 1
+    m.market_state[] = PreOpen
 end
 
 include("AlphaVantage.jl")
