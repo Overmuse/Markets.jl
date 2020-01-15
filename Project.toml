@@ -5,7 +5,9 @@ version = "0.1.0"
 
 [deps]
 BusinessDays = "4f18b42c-503e-5345-9536-bb0f25fc7038"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 IEX = "cd525e0c-0e7d-405c-8c0d-80eae073af02"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 TradingBase = "1e56c13b-5444-4379-9737-7aa7ad39eab5"

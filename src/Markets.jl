@@ -1,7 +1,10 @@
 module Markets
 
+using HTTP
+using CSV
+
 import BusinessDays: BusinessDays, advancebdays
-import Dates: Date, DateTime
+using Dates
 import ProgressMeter: @showprogress
 import TradingBase: AbstractOrder
 import IEX: get_historical, get_dividends
@@ -16,6 +19,9 @@ abstract type AbstractQuoteType end
 struct OHLC <: AbstractQuoteType end
 struct Close <: AbstractQuoteType end
 struct BidAsk <: AbstractQuoteType end
+
+abstract type MarketDataProvider end
+struct AlphaVantage <: MarketDataProvider end
 
 export Market, Daily, Minutely, Tick, OHLC, Close, BidAsk, tick!, get_clock, get_price, get_dividend, generate_market
 
@@ -48,7 +54,7 @@ function generate_market(assets, range; warmup = 0)
     Market(Daily(), Close(), Ref(warmup+1), Ref(true), first(values(dates)), assets, prices, events)
 end
 
-SinglePriceMarket(timestamps, assets, prices, events) = SinglePriceMarket(Ref(1), true, timestamps, assets, prices, events)
+Market(R, Q, timestamps, assets, prices, events) = Market(R, Q, Ref(1), Ref(true), timestamps, assets, prices, events)
 
 function tick!(m::AbstractMarket)
     if get_clock(m) != last(m.timestamps)
@@ -98,5 +104,7 @@ function reset!(m::AbstractMarket)
     m.state[] = 1
     m.open[] = true
 end
+
+include("AlphaVantage.jl")
 
 end # module
