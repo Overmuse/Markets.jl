@@ -11,9 +11,10 @@ import IEX: get_historical, get_dividends
 
 abstract type AbstractMarket end
 abstract type AbstractResolution end
+abstract type IntradayResolution <: AbstractResolution end
 struct Daily <: AbstractResolution end
-struct Minutely <: AbstractResolution end
-struct Tick <: AbstractResolution end
+struct Minutely <: IntradayResolution end
+struct Tick <: IntradayResolution end
 
 abstract type AbstractQuoteType end
 struct OHLC <: AbstractQuoteType end
@@ -27,14 +28,14 @@ export Market, Daily, Minutely, Tick, OHLC, Close, BidAsk, tick!, get_clock, get
 
 @enum MarketState PreOpen Open Closed
 
-struct Market{R, Q} <: AbstractMarket where {R <: AbstractResolution, Q <: AbstractQuoteType}
+struct Market{R, Q, P} <: AbstractMarket where {R <: AbstractResolution, Q <: AbstractQuoteType, P}
     resolution :: R
     quote_type :: Q
     tick_state :: Base.RefValue{Int}
     market_state :: Base.RefValue{MarketState}
     timestamps :: Vector{DateTime}
     assets :: Vector{String}
-    prices :: Dict{String, Vector{Float64}}
+    prices :: Dict{String, P}
     events :: Dict{String, <:NamedTuple}
 end
 
@@ -49,7 +50,7 @@ function tick!(m::AbstractMarket)
                 m.market_state[] = Open
             else
                 m.tick_state[] += 1
-                m.market_state = PreOpen
+                m.market_state[] = PreOpen
             end
         else
             m.tick_state[] += 1
