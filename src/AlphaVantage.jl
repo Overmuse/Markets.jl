@@ -40,22 +40,22 @@ function get_price_data(::AlphaVantage, r::Daily, q::AbstractQuoteType, asset::S
     (timestamp = convert.(DateTime, data.timestamp), price = extract_price_data(data, q))
 end
 
-function generate_market(::AlphaVantage, r::AbstractResolution, q::AbstractQuoteType, assets)
+function generate_market(::AlphaVantage, r::AbstractResolution, q::AbstractQuoteType, assets, warmup = 30)
     data = map(assets) do asset
         get_price_data(AlphaVantage(), r, q, asset)
     end
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(r, q, data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(r, q, Ref(warmup+2), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
 end
 
-function generate_market(::AlphaVantage, ::Minutely, q::AbstractQuoteType, assets)
+function generate_market(::AlphaVantage, ::Minutely, q::AbstractQuoteType, assets, warmup = 30)
     data = map(assets) do asset
         get_price_data(AlphaVantage(), Minutely(), q, asset)
     end
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(Minutely(), q, data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(Minutely(), q, Ref(warmup+2), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
 end

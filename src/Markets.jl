@@ -76,14 +76,18 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     end
 end
 
-function get_price(m::Market, symbol::String, side = nothing, d::DateTime = get_clock(m))
+function get_current(m::Market, symbol::String)
+    price_quote = m.prices[symbol][get_clock(m) .== m.timestamps][]
+end
+
+function get_last(m::Market, symbol::String, d = get_clock(m))
     _validate_market_query(m, symbol, d)
-    price_quote = m.prices[symbol][d .== m.timestamps][]
-    if length(price_quote) != 1
-        return price_quote.close
-    else
-        return price_quote
-    end
+    price_quote = m.prices[symbol][findlast(d .> m.timestamps)][]
+end
+
+function get_historical(m::Market, symbol::String, i)
+    range = (m.tick_state[]-1-i):(m.tick_state[]-1)
+    price_quote = m.prices[symbol][range]
 end
 
 function get_dividend(m::AbstractMarket, symbol::String, d::DateTime)
