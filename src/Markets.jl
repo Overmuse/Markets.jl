@@ -53,7 +53,7 @@ function tick!(m::AbstractMarket)
                 m.market_state[] = PreOpen
             end
         else
-            if m.market_state[] = PreOpen
+            if m.market_state[] == PreOpen
                 m.market_state[] = Open
             else
                 m.tick_state[] += 1
