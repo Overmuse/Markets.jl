@@ -6,7 +6,7 @@ using CSV
 import BusinessDays: BusinessDays, advancebdays
 using Dates
 import ProgressMeter: @showprogress
-import TradingBase: AbstractOrder
+import TradingBase: AbstractOrder, get_current, get_last, get_historical
 import IEX: get_historical, get_dividends
 
 abstract type AbstractMarket end
@@ -82,7 +82,7 @@ end
 
 function get_last(m::Market, symbol::String, d = get_clock(m))
     _validate_market_query(m, symbol, d)
-    price_quote = m.prices[symbol][findlast(d .> m.timestamps)][]
+    price_quote = m.prices[symbol][findlast(d .> m.timestamps)]
 end
 
 function get_historical(m::Market, symbol::String, i)
