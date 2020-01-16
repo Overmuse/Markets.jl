@@ -1,3 +1,4 @@
+struct AlphaVantage <: MarketDataProvider end
 const AV_URL = "https://www.alphavantage.co/query"
 
 function add_token!(params)
@@ -47,7 +48,7 @@ function generate_market(::AlphaVantage, r::AbstractResolution, q::AbstractQuote
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(r, q, Ref(warmup+2), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(r, q, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
 end
 
 function generate_market(::AlphaVantage, ::Minutely, q::AbstractQuoteType, assets, warmup = 30)
@@ -57,5 +58,5 @@ function generate_market(::AlphaVantage, ::Minutely, q::AbstractQuoteType, asset
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(Minutely(), q, Ref(warmup+2), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(Minutely(), q, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
 end
