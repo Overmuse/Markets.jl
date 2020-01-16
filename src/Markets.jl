@@ -24,7 +24,7 @@ struct BidAsk <: AbstractQuoteType end
 abstract type MarketDataProvider end
 struct AlphaVantage <: MarketDataProvider end
 
-export Market, Daily, Minutely, Tick, OHLC, Close, BidAsk, tick!, get_clock, get_price, get_dividend, generate_market
+export Market, Daily, Minutely, Tick, OHLC, Close, BidAsk, tick!, get_clock, get_last, get_historical, generate_market
 
 @enum MarketState PreOpen Open Closed
 
