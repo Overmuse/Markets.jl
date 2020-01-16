@@ -74,7 +74,12 @@ end
 
 function get_price(m::Market, symbol::String, side = nothing, d::DateTime = get_clock(m))
     _validate_market_query(m, symbol, d)
-    return m.prices[symbol][d .== m.timestamps][]
+    price_quote = m.prices[symbol][d .== m.timestamps][]
+    if length(price_quote) != 1
+        return price_quote.close
+    else
+        return price_quote
+    end
 end
 
 function get_dividend(m::AbstractMarket, symbol::String, d::DateTime)
