@@ -18,7 +18,8 @@ export
     get_clock,
     get_last,
     get_historical,
-    generate_market
+    generate_market,
+    is_open
 
 include("market.jl")
 include("AlphaVantage.jl")
