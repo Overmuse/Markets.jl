@@ -12,7 +12,7 @@ function alpha_vantage_get(params = Dict())
 end
 
 map_resolution(::Minutely) = "1min"
-map_resolution(::Daily) = "1min"
+map_resolution(::Daily) = "daily"
 
 extract_price_data(data, q::OHLC) = [(open = d.open, high = d.high, low = d.low, close = d.close) for d in eachrow(data)]
 extract_price_data(data, q::Close) = data.close
