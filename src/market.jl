@@ -1,9 +1,5 @@
 abstract type AbstractMarket end
-abstract type AbstractResolution end
-abstract type IntradayResolution <: AbstractResolution end
-struct Daily <: AbstractResolution end
-struct Minutely <: IntradayResolution end
-struct Tick <: IntradayResolution end
+struct Tick; end
 
 abstract type AbstractQuoteType end
 struct OHLC <: AbstractQuoteType end
@@ -14,14 +10,14 @@ abstract type MarketDataProvider end
 
 @enum MarketState PreOpen Open Closed
 
-struct Market{R, Q, P} <: AbstractMarket where {R <: AbstractResolution, Q <: AbstractQuoteType, P}
+struct Market{R, Q, P} <: AbstractMarket where {R <: Union{Period, Tick}, Q <: AbstractQuoteType, P}
     resolution :: R
     quote_type :: Q
     tick_state :: Base.RefValue{Int}
     market_state :: Base.RefValue{MarketState}
     timestamps :: Vector{DateTime}
     assets :: Vector{String}
-    prices :: Dict{String, P}
+    prices :: Dict{String, Dict{DateTime, P}}
     events :: Dict{String, <:NamedTuple}
 end
 
@@ -63,12 +59,19 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
 end
 
 function get_current(m::Market, symbol::String)
-    price_quote = m.prices[symbol][findfirst(m.timestamps .== get_clock(m))]
+    get(m.prices[symbol], get_clock(m), missing)
 end
 
 function get_last(m::Market, symbol::String)
-    d = get_clock(m)
-    price_quote = m.prices[symbol][findfirst(m.timestamps .== d)-1]
+    prices = m.prices[symbol]
+    for i in (m.tick_state[]-1):-1:1
+        time = m.timestamps[i]
+        if time in keys(prices)
+            return prices[time]
+        end
+    end
+    @warn "No pricing data found for ticker $symbol"
+    return missing
 end
 
 function get_historical(m::Market, symbol::String, i)
@@ -77,7 +80,7 @@ function get_historical(m::Market, symbol::String, i)
         @warn "Can only get $lookback day(s) of market data. $i was asked for."
     end
     range = (m.tick_state[]-lookback):(m.tick_state[]-1)
-    price_quote = m.prices[symbol][range]
+    [get(m.prices[symbol], m.timestamps[r], missing) for r in range]
 end
 
 function get_dividend(m::AbstractMarket, symbol::String, d::DateTime)

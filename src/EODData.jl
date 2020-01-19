@@ -1,18 +1,18 @@
 struct EODData <: MarketDataProvider
 end
 
-function generate_market(::EODData, ::Minutely, ::Close, warmup = 0; path = "/Users/sebastianrollen/data/NYSE/")
-    data_path = path * "1min/"
-    files = sort(data_path .* readdir(data_path))
+function generate_market(::EODData, r::TimePeriod, ::Close, warmup = 0; path = "/Users/sebastianrollen/data/NYSE/")
+    data_path = path * RESOLUTION_MAPPING[r]
+    files = joinpath.(data_path, readdir(data_path))
     data = reduce(vcat, @showprogress map(files) do file
         CSV.read(file, dateformat = "d-u-Y H:M")
     end)
     sort!(data, (:Symbol, :Date))
     assets = unique(data.Symbol)
     timestamps = sort(unique(data.Date))
-    prices = Dict{String, Vector{Float64}}()
+    prices = Dict{String, Dict{DateTime, Float64}}()
     @showprogress for x in groupby(data, :Symbol)
-        push!(prices, unique(x.Symbol)[] => x.Close)
+        prices[unique(x.Symbol)[]] = Dict(d => c for (d, c) in zip(x.Date, x.Close))
     end
-    Market(Minutely(), Close(), timestamps, assets, prices, Dict{String, NamedTuple}())
+    Market(r, Close(), timestamps, assets, prices, Dict{String, NamedTuple}())
 end
