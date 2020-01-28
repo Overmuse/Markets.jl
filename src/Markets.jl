@@ -5,6 +5,7 @@ using CSV
 using Dates
 using ProgressMeter: @showprogress
 using DataFrames: groupby
+using Polygon
 
 import TradingBase: AbstractOrder, get_last, get_historical
 
@@ -32,4 +33,5 @@ const RESOLUTION_MAPPING = Dict(
 include("market.jl")
 include("AlphaVantage.jl")
 include("EODData.jl")
+include("Polygon.jl")
 end # module
