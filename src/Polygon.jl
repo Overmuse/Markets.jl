@@ -11,3 +11,18 @@ function generate_market(::PolygonData, r, ::Close, tickers, start_date, end_dat
     timestamps = intersect(keys.(values(prices))...) |> collect |> sort
     Market(r, Close(), timestamps, tickers, prices, Dict{String, NamedTuple}())
 end
+
+function generate_market(::PolygonData, r, ::OHLC, tickers, start_date, end_date)
+    data = map(tickers) do ticker
+        Polygon.get_historical_range(ticker, start_date, end_date, 1, "day", adjusted=true)
+    end
+    prices = Dict(map(zip(tickers, data)) do (ticker, ticker_data)
+        ticker => Dict(unix2datetime(x["t"]/1000) => (
+            open = x["o"],
+            high = x["h"],
+            low = x["l"],
+            close = x["c"]) for x in ticker_data if x["c"] != 0)
+    end)
+    timestamps = intersect(keys.(values(prices))...) |> collect |> sort
+    Market(r, OHLC(), timestamps, tickers, prices, Dict{String, NamedTuple}())
+end

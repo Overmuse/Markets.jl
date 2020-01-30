@@ -58,11 +58,20 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     end
 end
 
-function get_current(m::Market, symbol::String)
+function get_current(m::Market{<:Any, Close, <:Any}, symbol::String)
     get(m.prices[symbol], get_clock(m), missing)
 end
 
-function get_last(m::Market, symbol::String)
+function get_current(m::Market{<:Any, OHLC, <:Any}, symbol::String)
+    prices = get(m.prices[symbol], get_clock(m), nothing)
+    if is_open(m) || m.market_state[] == Closed
+        return prices.close
+    else
+        return prices.open
+    end
+end
+
+function get_last(m::Market{<:Any, Close, <:Any}, symbol::String)
     prices = m.prices[symbol]
     for i in (m.tick_state[]-1):-1:1
         time = m.timestamps[i]
@@ -72,6 +81,26 @@ function get_last(m::Market, symbol::String)
     end
     @warn "No pricing data found for ticker $symbol"
     return missing
+end
+
+function get_last(m::Market{<:Any, OHLC, <:Any}, symbol::String)
+    if is_open(m)
+        prices = get(m.prices[symbol], get_clock(m), nothing)
+        return prices.open
+    elseif m.market_state[] == Closed
+        prices = get(m.prices[symbol], get_clock(m), nothing)
+        return prices.close
+    else
+        prices = m.prices[symbol]
+        for i in (m.tick_state[]-1):-1:1
+            time = m.timestamps[i]
+            if time in keys(prices)
+                return prices[time].close
+            end
+        end
+        @warn "No pricing data found for ticker $symbol"
+        return missing
+    end
 end
 
 function get_historical(m::Market, symbol::String, i)
