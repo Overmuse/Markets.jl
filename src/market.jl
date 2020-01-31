@@ -1,16 +1,11 @@
 abstract type AbstractMarket end
 struct Tick; end
 
-abstract type AbstractQuoteType end
-struct OHLC <: AbstractQuoteType end
-struct Close <: AbstractQuoteType end
-struct BidAsk <: AbstractQuoteType end
-
 abstract type MarketDataProvider end
 
 @enum MarketState PreOpen Open Closed
 
-struct Market{R, Q, P} <: AbstractMarket where {R <: Union{Period, Tick}, Q <: AbstractQuoteType, P}
+struct Market{R, Q, P} <: AbstractMarket where {R <: Union{Period, Tick}, Q <: AbstractMarketDataAggregate, P}
     resolution :: R
     quote_type :: Q
     tick_state :: Base.RefValue{Int}
@@ -59,13 +54,14 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
 end
 
 function get_current(m::Market{<:Any, Close, <:Any}, symbol::String)
-    get(m.prices[symbol], get_clock(m), missing)
+    price = get(m.prices[symbol], get_clock(m), missing)
+    return ismissing(price) ? missing : get_close(price)
 end
 
-function get_current(m::Market{<:Any, OHLC, <:Any}, symbol::String)
+function get_current(m::Market{<:Any, Union{OHLC, OHLCV}, <:Any}, symbol::String)
     prices = get(m.prices[symbol], get_clock(m), nothing)
     if is_open(m) || m.market_state[] == Closed
-        return prices.close
+        return get_close(prices)
     else
         return prices.open
     end
@@ -76,26 +72,26 @@ function get_last(m::Market{<:Any, Close, <:Any}, symbol::String)
     for i in (m.tick_state[]-1):-1:1
         time = m.timestamps[i]
         if time in keys(prices)
-            return prices[time]
+            return get_close(prices[time])
         end
     end
     @warn "No pricing data found for ticker $symbol"
     return missing
 end
 
-function get_last(m::Market{<:Any, OHLC, <:Any}, symbol::String)
+function get_last(m::Market{<:Any, Union{OHLC, OHLCV}, <:Any}, symbol::String)
     if is_open(m)
         prices = get(m.prices[symbol], get_clock(m), nothing)
         return prices.open
     elseif m.market_state[] == Closed
         prices = get(m.prices[symbol], get_clock(m), nothing)
-        return prices.close
+        return get_close(prices)
     else
         prices = m.prices[symbol]
         for i in (m.tick_state[]-1):-1:1
             time = m.timestamps[i]
             if time in keys(prices)
-                return prices[time].close
+                return get_close(prices[time])
             end
         end
         @warn "No pricing data found for ticker $symbol"

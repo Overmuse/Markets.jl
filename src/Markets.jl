@@ -7,13 +7,19 @@ using ProgressMeter: @showprogress
 using DataFrames: groupby
 using Polygon
 
-import TradingBase: AbstractOrder, get_last, get_historical
+import TradingBase:
+    AbstractMarketDataAggregate,
+    AbstractOrder,
+    Close,
+    OHLC,
+    OHLCV,
+    get_close,
+    get_last,
+    get_historical
 
 export
     Market,
     Tick,
-    OHLC,
-    Close,
     BidAsk,
     tick!,
     get_clock,
