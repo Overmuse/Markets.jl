@@ -5,9 +5,8 @@ abstract type MarketDataProvider end
 
 @enum MarketState PreOpen Open Closed
 
-struct Market{R, Q, P} <: AbstractMarket where {R <: Union{Period, Tick}, Q <: AbstractMarketDataAggregate, P}
+struct Market{R, P} <: AbstractMarket where {R <: Union{Period, Tick}, P <: AbstractMarketDataAggregate}
     resolution :: R
-    quote_type :: Q
     tick_state :: Base.RefValue{Int}
     market_state :: Base.RefValue{MarketState}
     timestamps :: Vector{DateTime}
@@ -16,7 +15,7 @@ struct Market{R, Q, P} <: AbstractMarket where {R <: Union{Period, Tick}, Q <: A
     events :: Dict{String, <:NamedTuple}
 end
 
-Market(R, Q, timestamps, assets, prices, events) = Market(R, Q, Ref(1), Ref(PreOpen), timestamps, assets, prices, events)
+Market(R, timestamps, assets, prices, events) = Market(R, Ref(1), Ref(PreOpen), timestamps, assets, prices, events)
 
 function tick!(m::AbstractMarket)
     if get_clock(m) != last(m.timestamps)
@@ -53,12 +52,12 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     end
 end
 
-function get_current(m::Market{<:Any, Close, <:Any}, symbol::String)
+function get_current(m::Market{<:Any, Close}, symbol::String)
     price = get(m.prices[symbol], get_clock(m), missing)
     return ismissing(price) ? missing : get_close(price)
 end
 
-function get_current(m::Market{<:Any, Union{OHLC, OHLCV}, <:Any}, symbol::String)
+function get_current(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
     prices = get(m.prices[symbol], get_clock(m), nothing)
     if is_open(m) || m.market_state[] == Closed
         return get_close(prices)
@@ -67,7 +66,7 @@ function get_current(m::Market{<:Any, Union{OHLC, OHLCV}, <:Any}, symbol::String
     end
 end
 
-function get_last(m::Market{<:Any, Close, <:Any}, symbol::String)
+function get_last(m::Market{<:Any, Close}, symbol::String)
     prices = m.prices[symbol]
     for i in (m.tick_state[]-1):-1:1
         time = m.timestamps[i]
@@ -79,7 +78,7 @@ function get_last(m::Market{<:Any, Close, <:Any}, symbol::String)
     return missing
 end
 
-function get_last(m::Market{<:Any, Union{OHLC, OHLCV}, <:Any}, symbol::String)
+function get_last(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
     if is_open(m)
         prices = get(m.prices[symbol], get_clock(m), nothing)
         return prices.open

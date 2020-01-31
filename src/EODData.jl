@@ -14,5 +14,5 @@ function generate_market(::EODData, r::TimePeriod, ::Type{Close}, warmup = 0; pa
     @showprogress for x in groupby(data, :Symbol)
         prices[unique(x.Symbol)[]] = Dict(d => Close(c) for (d, c) in zip(x.Date, x.Close))
     end
-    Market(r, Close, timestamps, assets, prices, Dict{String, NamedTuple}())
+    Market(r, timestamps, assets, prices, Dict{String, NamedTuple}())
 end

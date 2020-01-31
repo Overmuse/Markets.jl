@@ -46,5 +46,5 @@ function generate_market(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAgg
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(r, q, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(r, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
 end
