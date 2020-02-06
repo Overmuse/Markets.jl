@@ -25,7 +25,12 @@ export
     get_clock,
     get_last,
     get_historical,
-    generate_market
+    generate_market,
+    is_preopen,
+    is_opening,
+    is_open,
+    is_closing,
+    is_closed
 
 const RESOLUTION_MAPPING = Dict(
     Minute(1)  => "1min",

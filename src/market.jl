@@ -3,7 +3,7 @@ struct Tick; end
 
 abstract type MarketDataProvider end
 
-@enum MarketState PreOpen Open Closed
+@enum MarketState PreOpen Opening Open Closing Closed
 
 struct Market{R, P} <: AbstractMarket where {R <: Union{Period, Tick}, P <: AbstractMarketDataAggregate}
     resolution :: R
@@ -20,18 +20,27 @@ Market(R, timestamps, assets, prices, events) = Market(R, Ref(1), Ref(PreOpen), 
 function tick!(m::AbstractMarket)
     if get_clock(m) != last(m.timestamps)
         if Date(m.timestamps[m.tick_state[] + 1]) != Date(get_clock(m))
-            if is_open(m)
-                m.market_state[] = Closed
-            elseif m.market_state[] == PreOpen
+            if is_preopen(m)
+                m.market_state[] = Opening
+            elseif is_opening(m)
                 m.market_state[] = Open
-            else
+            elseif is_open(m)
+                m.market_state[] = Closing
+            elseif is_closing(m)
+                m.market_state[] = Closed
+            elseif is_closed(m)
                 m.tick_state[] += 1
                 m.market_state[] = PreOpen
+            else
+                error("invalid market state")
             end
         else
-            if m.market_state[] == PreOpen
+            if is_preopen(m)
+                m.market_state[] = Opening
+            elseif is_opening(m)
                 m.market_state[] = Open
             else
+                # Open
                 m.tick_state[] += 1
             end
         end
@@ -39,7 +48,11 @@ function tick!(m::AbstractMarket)
     return nothing
 end
 
+is_preopen(m::AbstractMarket) = m.market_state[] == PreOpen
+is_opening(m::AbstractMarket) = m.market_state[] == Opening
 is_open(m::AbstractMarket) = m.market_state[] == Open
+is_closing(m::AbstractMarket) = m.market_state[] == Closing
+is_closed(m::AbstractMarket) = m.market_state[] == Closed
 get_clock(m::AbstractMarket) = m.timestamps[m.tick_state[]]
 
 function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
@@ -79,13 +92,7 @@ function get_last(m::Market{<:Any, Close}, symbol::String)
 end
 
 function get_last(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
-    if is_open(m)
-        prices = get(m.prices[symbol], get_clock(m), nothing)
-        return prices.open
-    elseif m.market_state[] == Closed
-        prices = get(m.prices[symbol], get_clock(m), nothing)
-        return get_close(prices)
-    else
+    if is_preopen(m) || is_opening(m)
         prices = m.prices[symbol]
         for i in (m.tick_state[]-1):-1:1
             time = m.timestamps[i]
@@ -95,6 +102,14 @@ function get_last(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
         end
         @warn "No pricing data found for ticker $symbol"
         return missing
+    elseif is_open(m)
+        prices = get(m.prices[symbol], get_clock(m), nothing)
+        return prices.open
+    elseif is_closing(m) || is_closed(m)
+        prices = get(m.prices[symbol], get_clock(m), nothing)
+        return get_close(prices)
+    else
+        error("Invalid market state")
     end
 end
 
