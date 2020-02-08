@@ -136,3 +136,7 @@ function reset!(m::AbstractMarket)
     m.tick_state[] = 1
     m.market_state[] = PreOpen
 end
+
+function warmup!(m::AbstractMarket, i)
+    m.tick_state[] = i+1
+end

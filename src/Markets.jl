@@ -30,7 +30,9 @@ export
     is_opening,
     is_open,
     is_closing,
-    is_closed
+    is_closed,
+    reset!,
+    warmup!
 
 const RESOLUTION_MAPPING = Dict(
     Minute(1)  => "1min",
