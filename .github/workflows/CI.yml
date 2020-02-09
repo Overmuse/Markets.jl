@@ -18,5 +18,5 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
-      - run: julia -e 'using Pkg; Pkg.Registry.add(RegistrySpec(url="git@github.com:HakoSwede/PrivateRegistry"))'
+      - run: julia -e 'using Pkg; Pkg.Registry.add(RegistrySpec(url="https://github.com/JuliaRegistries/General")); Pkg.Registry.add(RegistrySpec(url="git@github.com:HakoSwede/PrivateRegistry"))'
       - uses: julia-actions/julia-runtest@master
