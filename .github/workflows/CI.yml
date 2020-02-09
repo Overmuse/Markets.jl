@@ -15,6 +15,7 @@ jobs:
       - uses: webfactory/ssh-agent@v0.2.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - run: git config url.git@github.com:.insteadOf https://github.com/
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
