@@ -1,10 +1,21 @@
 name = "Markets"
 uuid = "e289261d-1a32-4d56-985b-5cdfc675b408"
 authors = ["Sebastian Rollen <sebastian.rollen@betterment.com>"]
-version = "0.4.1"
+version = "0.5.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+Polygon = "6c90dff6-b80f-4bd2-aa9c-319c6ebead32"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 TradingBase = "1e56c13b-5444-4379-9737-7aa7ad39eab5"
+
+[compat]
+CSV = "0.5"
+DataFrames = "0.20"
+HTTP = "0.8"
+Polygon = "1.0"
+ProgressMeter = "1.2"
+TradingBase = "0.1.6"

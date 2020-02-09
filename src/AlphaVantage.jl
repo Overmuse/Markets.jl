@@ -11,16 +11,14 @@ function alpha_vantage_get(params = Dict())
     sort(CSV.read(req.body), :timestamp)
 end
 
-map_resolution(::Minutely) = "1min"
-map_resolution(::Daily) = "1min"
+extract_price_data(data, q::Type{OHLCV}) = [OHLC(d.open, d.high, d.low, d.close, d.volume) for d in eachrow(data)]
+extract_price_data(data, q::Type{OHLC}) = [OHLC(d.open, d.high, d.low, d.close) for d in eachrow(data)]
+extract_price_data(data, q::Type{Close}) = Close(data.close)
 
-extract_price_data(data, q::OHLC) = [(open = d.open, high = d.high, low = d.low, close = d.close) for d in eachrow(data)]
-extract_price_data(data, q::Close) = data.close
-
-function get_price_data(::AlphaVantage, r::IntradayResolution, q::AbstractQuoteType, asset::String)
+function get_price_data(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggregate, asset::String)
     params = Dict(
         "function" => "TIME_SERIES_INTRADAY",
-        "interval" => map_resolution(r),
+        "interval" => RESOLUTION_MAPPING[r],
         "symbol" => asset,
         "outputsize" => "full",
         "datatype" => "csv"
@@ -30,7 +28,7 @@ function get_price_data(::AlphaVantage, r::IntradayResolution, q::AbstractQuoteT
     (timestamp = timestamp, price = extract_price_data(data, q))
 end
 
-function get_price_data(::AlphaVantage, r::Daily, q::AbstractQuoteType, asset::String)
+function get_price_data(::AlphaVantage, r::DatePeriod, q::AbstractMarketDataAggregate, asset::String)
     params = Dict(
         "function" => "TIME_SERIES_DAILY",
         "symbol" => asset,
@@ -41,22 +39,12 @@ function get_price_data(::AlphaVantage, r::Daily, q::AbstractQuoteType, asset::S
     (timestamp = convert.(DateTime, data.timestamp), price = extract_price_data(data, q))
 end
 
-function generate_market(::AlphaVantage, r::AbstractResolution, q::AbstractQuoteType, assets, warmup = 30)
+function generate_market(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggregate, assets, warmup = 30)
     data = map(assets) do asset
         get_price_data(AlphaVantage(), r, q, asset)
     end
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(r, q, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
-end
-
-function generate_market(::AlphaVantage, ::Minutely, q::AbstractQuoteType, assets, warmup = 30)
-    data = map(assets) do asset
-        get_price_data(AlphaVantage(), Minutely(), q, asset)
-    end
-    prices = Dict(map(zip(assets, data)) do (a, d)
-        a => d.price
-    end)
-    Market(Minutely(), q, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(r, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
 end
