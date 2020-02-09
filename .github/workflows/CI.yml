@@ -16,8 +16,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - run: git config url.git@github.com:.insteadOf https://github.com/
-      - run: git config user.name "RollenRegistratorBot"
-      - run: git config user.password ${{ secrets.PAT }}
+      - run: git config --global user.name "RollenRegistratorBot"
+      - run: git config --global user.password "${{ secrets.PAT }}"
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
