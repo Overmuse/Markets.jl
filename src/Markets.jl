@@ -13,9 +13,16 @@ import TradingBase:
     Close,
     OHLC,
     OHLCV,
+    SimulatedMarketDataProvider,
+    get_clock,
     get_close,
     get_last,
-    get_historical
+    get_historical,
+    is_preopen,
+    is_opening,
+    is_open,
+    is_closing,
+    is_closed
 
 export
     Market,

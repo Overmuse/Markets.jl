@@ -1,4 +1,4 @@
-abstract type AbstractMarket end
+abstract type AbstractMarket <: SimulatedMarketDataProvider end
 struct Tick; end
 
 abstract type MarketDataProvider end

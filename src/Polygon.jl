@@ -12,9 +12,10 @@ function generate_market(::PolygonData, r, ::Type{Close}, tickers, start_date, e
     Market(r, timestamps, tickers, prices, Dict{String, NamedTuple}())
 end
 
-function generate_market(::PolygonData, r, ::Type{OHLCV}, tickers, start_date, end_date)
+function generate_market(api::PolygonData, r, ::Type{OHLCV}, tickers, start_date, end_date)
+    creds = Polygon.get_credentials()
     data = map(tickers) do ticker
-        Polygon.get_historical_range(ticker, start_date, end_date, 1, "day", adjusted=true)
+        Polygon.get_historical_range(creds, ticker, start_date, end_date, 1, "day", adjusted=true)
     end
     prices = Dict{String, Dict{DateTime, OHLCV}}()
     for (ticker, ticker_data) in zip(tickers, data)

@@ -1,7 +1,7 @@
 name = "Markets"
 uuid = "e289261d-1a32-4d56-985b-5cdfc675b408"
 authors = ["Sebastian Rollen <sebastian.rollen@betterment.com>"]
-version = "0.5.0"
+version = "0.5.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -18,4 +18,4 @@ DataFrames = "0.20"
 HTTP = "0.8"
 Polygon = "1.0"
 ProgressMeter = "1.2"
-TradingBase = "0.1.6"
+TradingBase = "0.2"
