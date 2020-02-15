@@ -10,7 +10,7 @@ function generate_market(::EODData, r::TimePeriod, ::Type{Close}, warmup = 0; pa
     sort!(data, (:Symbol, :Date))
     assets = unique(data.Symbol)
     timestamps = sort(unique(data.Date))
-    prices = Dict{String, Dict{DateTime, Float64}}()
+    prices = Dict{String, Dict{DateTime, Close{Float64}}}()
     @showprogress for x in groupby(data, :Symbol)
         prices[unique(x.Symbol)[]] = Dict(d => Close(c) for (d, c) in zip(x.Date, x.Close))
     end

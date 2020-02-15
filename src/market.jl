@@ -65,7 +65,7 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     end
 end
 
-function get_current(m::Market{<:Any, Close}, symbol::String)
+function get_current(m::Market{<:Any, Close{T}}, symbol::String) where T
     price = get(m.prices[symbol], get_clock(m), missing)
     return ismissing(price) ? missing : get_close(price)
 end
