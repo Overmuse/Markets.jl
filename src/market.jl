@@ -9,13 +9,14 @@ struct Market{R, P} <: AbstractMarket where {R <: Union{Period, Tick}, P <: Abst
     resolution :: R
     tick_state :: Base.RefValue{Int}
     market_state :: Base.RefValue{MarketState}
+    start_state :: Int
     timestamps :: Vector{DateTime}
     assets :: Vector{String}
     prices :: Dict{String, Dict{DateTime, P}}
     events :: Dict{String, <:NamedTuple}
 end
 
-Market(R, timestamps, assets, prices, events) = Market(R, Ref(1), Ref(PreOpen), timestamps, assets, prices, events)
+Market(R, timestamps, assets, prices, events, warmup = 0) = Market(R, Ref(warmup+1), Ref(PreOpen), warmup+1, timestamps, assets, prices, events)
 
 function tick!(m::AbstractMarket)
     if get_clock(m) != last(m.timestamps)
@@ -133,7 +134,7 @@ function get_dividend(m::AbstractMarket, symbol::String, d::DateTime)
 end
 
 function reset!(m::AbstractMarket)
-    m.tick_state[] = 1
+    m.tick_state[] = m.start_state
     m.market_state[] = PreOpen
 end
 

@@ -1,7 +1,7 @@
 struct PolygonData <: MarketDataProvider
 end
 
-function generate_market(::PolygonData, r, ::Type{Close}, tickers, start_date, end_date)
+function generate_market(::PolygonData, r, ::Type{Close}, tickers, start_date, end_date; warmup=0)
     data = map(tickers) do ticker
         Polygon.get_historical_range(ticker, start_date, end_date, 1, "day", adjusted=true)
     end
@@ -9,10 +9,10 @@ function generate_market(::PolygonData, r, ::Type{Close}, tickers, start_date, e
         ticker => Dict(unix2datetime(x["t"]/1000) => Close(x["c"]) for x in ticker_data if x["c"] != 0)
     end)
     timestamps = intersect(keys.(values(prices))...) |> collect |> sort
-    Market(r, timestamps, tickers, prices, Dict{String, NamedTuple}())
+    Market(r, timestamps, tickers, prices, Dict{String, NamedTuple}(), warmup)
 end
 
-function generate_market(api::PolygonData, r, ::Type{OHLCV}, tickers, start_date, end_date)
+function generate_market(api::PolygonData, r, ::Type{OHLCV}, tickers, start_date, end_date; warmup=0)
     creds = Polygon.get_credentials()
     data = map(tickers) do ticker
         Polygon.get_historical_range(creds, ticker, start_date, end_date, 1, "day", adjusted=true)
@@ -34,5 +34,5 @@ function generate_market(api::PolygonData, r, ::Type{OHLCV}, tickers, start_date
         prices[ticker] = ticker_prices
     end
     timestamps = intersect(keys.(values(prices))...) |> collect |> sort
-    Market(r, timestamps, tickers, prices, Dict{String, NamedTuple}())
+    Market(r, timestamps, tickers, prices, Dict{String, NamedTuple}(), warmup)
 end

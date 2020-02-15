@@ -39,12 +39,12 @@ function get_price_data(::AlphaVantage, r::DatePeriod, q::AbstractMarketDataAggr
     (timestamp = convert.(DateTime, data.timestamp), price = extract_price_data(data, q))
 end
 
-function generate_market(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggregate, assets, warmup = 30)
+function generate_market(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggregate, assets, warmup = 0)
     data = map(assets) do asset
         get_price_data(AlphaVantage(), r, q, asset)
     end
     prices = Dict(map(zip(assets, data)) do (a, d)
         a => d.price
     end)
-    Market(r, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+    Market(r, data[1].timestamp, assets, prices, Dict{String, NamedTuple}(), warmup)
 end

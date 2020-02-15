@@ -1,7 +1,7 @@
 struct EODData <: MarketDataProvider
 end
 
-function generate_market(::EODData, r::TimePeriod, ::Type{Close}, warmup = 0; path = "/Users/sebastianrollen/data/NYSE/")
+function generate_market(::EODData, r::TimePeriod, ::Type{Close}; warmup = 0, path = "/Users/sebastianrollen/data/NYSE/")
     data_path = path * RESOLUTION_MAPPING[r]
     files = joinpath.(data_path, readdir(data_path))
     data = reduce(vcat, @showprogress map(files) do file
@@ -14,5 +14,5 @@ function generate_market(::EODData, r::TimePeriod, ::Type{Close}, warmup = 0; pa
     @showprogress for x in groupby(data, :Symbol)
         prices[unique(x.Symbol)[]] = Dict(d => Close(c) for (d, c) in zip(x.Date, x.Close))
     end
-    Market(r, timestamps, assets, prices, Dict{String, NamedTuple}())
+    Market(r, timestamps, assets, prices, Dict{String, NamedTuple}(), warmup)
 end
