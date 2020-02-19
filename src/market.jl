@@ -73,7 +73,7 @@ end
 
 function get_current(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
     prices = get(m.prices[symbol], get_clock(m), nothing)
-    if is_open(m) || m.market_state[] == Closed
+    if is_open(m) || is_closing(m) || is_closed(m)
         return get_close(prices)
     else
         return prices.open
