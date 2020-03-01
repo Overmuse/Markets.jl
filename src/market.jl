@@ -1,8 +1,6 @@
 abstract type AbstractMarket <: SimulatedMarketDataProvider end
 struct Tick; end
 
-abstract type MarketDataProvider end
-
 @enum MarketState PreOpen Opening Open Closing Closed
 
 struct Market{R, P} <: AbstractMarket where {R <: Union{Period, Tick}, P <: AbstractMarketDataAggregate}
