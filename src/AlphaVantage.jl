@@ -34,8 +34,7 @@ function get_price_data(::AlphaVantage, r::DatePeriod, q::Type{<:AbstractMarketD
     )
     data = alpha_vantage_get(params)
     filter!(x -> x.timestamp >= start_date && x.timestamp <= end_date, data)
-    df = dateformat"yyyy-mm-dd HH:MM:SS"
-    Dict(parse(DateTime, x.timestamp, df) => extract_price_data(x, q) for x in eachrow(data))
+    Dict(x.timestamp+Time(0) => extract_price_data(x, q) for x in eachrow(data))
 end
 
 function generate_data(::AlphaVantage, r, q, assets, start_date, end_date)

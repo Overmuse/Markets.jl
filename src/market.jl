@@ -64,12 +64,12 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     end
 end
 
-function get_current(m::Market{<:Any, Close{T}}, symbol::String) where T
+function get_current(m::Market{<:Any, <:Union{Close, Missing}}, symbol::String)
     price = get(m.prices[symbol], get_clock(m), missing)
     return ismissing(price) ? missing : get_close(price)
 end
 
-function get_current(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
+function get_current(m::Market{<:Any, <:Union{Missing, <:Union{OHLC, OHLCV}}}, symbol::String)
     prices = get(m.prices[symbol], get_clock(m), nothing)
     if is_open(m) || is_closing(m) || is_closed(m)
         return get_close(prices)
@@ -78,7 +78,7 @@ function get_current(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
     end
 end
 
-function get_last(m::Market{<:Any, Close}, symbol::String)
+function get_last(m::Market{<:Any, <:Union{Close, Missing}}, symbol::String)
     prices = m.prices[symbol]
     for i in (m.tick_state[]-1):-1:1
         time = m.timestamps[i]
@@ -90,7 +90,7 @@ function get_last(m::Market{<:Any, Close}, symbol::String)
     return missing
 end
 
-function get_last(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
+function get_last(m::Market{<:Any, <:Union{Missing, <:Union{OHLC, OHLCV}}}, symbol::String)
     if is_preopen(m) || is_opening(m)
         prices = m.prices[symbol]
         for i in (m.tick_state[]-1):-1:1

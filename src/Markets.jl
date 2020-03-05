@@ -61,7 +61,7 @@ function _relevant_dates(dates, method = :fill_forward)
     elseif method == :remove
         return sort(collect(reduce(intersect, dates)))
     else
-        error("Can only handle :fill_forward and :remove")
+        error("Can only handle :fill_forward, :retain and :remove")
     end
 end
 
@@ -98,9 +98,9 @@ end
 
 function process_prices(timestamps, data, missing_data_handling)
     assets = keys(data)
-    processed_data = Dict{String, Dict{DateTime, Union{<:AbstractMarketDataAggregate, Missing}}}()
+    processed_data = copy(data)
     for asset in assets
-        processed_data[asset] = Dict{DateTime, Union{<:AbstractMarketDataAggregate, Missing}}()
+        processed_data[asset] = Dict()
         available_timestamps = keys(data[asset])
         if all(x -> x in available_timestamps, timestamps)
             processed_data[asset] = data[asset]
@@ -125,7 +125,7 @@ function process_prices(timestamps, data, missing_data_handling)
     processed_data
 end
 
-function generate_market(m::MarketDataProvider, r, q::Type{<:AbstractMarketDataAggregate}, assets, start_date, end_date; warmup = 0, missing_data_handling = :fill_forward)
+function generate_market(m::MarketDataProvider, r, q, assets, start_date, end_date; warmup = 0, missing_data_handling = :fill_forward)
     data = generate_data(m, r, q, assets, start_date, end_date)
     timestamps = extract_timestamps(data, missing_data_handling)
     prices = process_prices(timestamps, data, missing_data_handling)
