@@ -98,9 +98,10 @@ end
 
 function process_prices(timestamps, data, missing_data_handling)
     assets = keys(data)
-    processed_data = copy(data)
+    data_type = eltype(eltype(data).parameters[2]).parameters[2]
+    processed_data = Dict{String, Dict{DateTime, Union{data_type, Missing}}}()
     for asset in assets
-        processed_data[asset] = Dict()
+        processed_data[asset] = Dict{DateTime, Union{data_type, Missing}}()
         available_timestamps = keys(data[asset])
         if all(x -> x in available_timestamps, timestamps)
             processed_data[asset] = data[asset]
