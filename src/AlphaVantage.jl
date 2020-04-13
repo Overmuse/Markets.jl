@@ -11,11 +11,7 @@ function alpha_vantage_get(params = Dict())
     sort(CSV.read(req.body), :timestamp)
 end
 
-extract_price_data(data, q::Type{OHLCV}) = [OHLC(d.open, d.high, d.low, d.close, d.volume) for d in eachrow(data)]
-extract_price_data(data, q::Type{OHLC}) = [OHLC(d.open, d.high, d.low, d.close) for d in eachrow(data)]
-extract_price_data(data, q::Type{Close}) = Close(data.close)
-
-function get_price_data(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggregate, asset::String)
+function get_price_data(::AlphaVantage, r::TimePeriod, q::Type{<:AbstractMarketDataAggregate}, asset::String, start_date, end_date)
     params = Dict(
         "function" => "TIME_SERIES_INTRADAY",
         "interval" => RESOLUTION_MAPPING[r],
@@ -24,11 +20,12 @@ function get_price_data(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggr
         "datatype" => "csv"
     )
     data = alpha_vantage_get(params)
-    timestamp = parse.(DateTime, data.timestamp, dateformat"Y-m-d H:M:S")
-    (timestamp = timestamp, price = extract_price_data(data, q))
+    filter!(x -> Date(x.timestamp[1:10]) >= start_date && Date(x.timestamp[1:10]) <= end_date, data)
+    df = dateformat"yyyy-mm-dd HH:MM:SS"
+    Dict(parse(DateTime, x.timestamp, df) => extract_price_data(x, q) for x in eachrow(data))
 end
 
-function get_price_data(::AlphaVantage, r::DatePeriod, q::AbstractMarketDataAggregate, asset::String)
+function get_price_data(::AlphaVantage, r::DatePeriod, q::Type{<:AbstractMarketDataAggregate}, asset::String, start_date, end_date)
     params = Dict(
         "function" => "TIME_SERIES_DAILY",
         "symbol" => asset,
@@ -36,15 +33,11 @@ function get_price_data(::AlphaVantage, r::DatePeriod, q::AbstractMarketDataAggr
         "datatype" => "csv"
     )
     data = alpha_vantage_get(params)
-    (timestamp = convert.(DateTime, data.timestamp), price = extract_price_data(data, q))
+    filter!(x -> x.timestamp >= start_date && x.timestamp <= end_date, data)
+    Dict(x.timestamp+Time(0) => extract_price_data(x, q) for x in eachrow(data))
 end
 
-function generate_market(::AlphaVantage, r::TimePeriod, q::AbstractMarketDataAggregate, assets, warmup = 30)
-    data = map(assets) do asset
-        get_price_data(AlphaVantage(), r, q, asset)
-    end
-    prices = Dict(map(zip(assets, data)) do (a, d)
-        a => d.price
-    end)
-    Market(r, Ref(warmup+1), Ref(PreOpen), data[1].timestamp, assets, prices, Dict{String, NamedTuple}())
+function generate_data(::AlphaVantage, r, q, assets, start_date, end_date)
+    p = Progress(length(assets))
+    Dict(asset => get_price_data(AlphaVantage(), r, q, asset, start_date, end_date) for asset in assets)
 end

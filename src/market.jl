@@ -1,7 +1,5 @@
-abstract type AbstractMarket end
+abstract type AbstractMarket <: SimulatedMarketDataProvider end
 struct Tick; end
-
-abstract type MarketDataProvider end
 
 @enum MarketState PreOpen Opening Open Closing Closed
 
@@ -9,13 +7,14 @@ struct Market{R, P} <: AbstractMarket where {R <: Union{Period, Tick}, P <: Abst
     resolution :: R
     tick_state :: Base.RefValue{Int}
     market_state :: Base.RefValue{MarketState}
+    start_state :: Int
     timestamps :: Vector{DateTime}
     assets :: Vector{String}
     prices :: Dict{String, Dict{DateTime, P}}
     events :: Dict{String, <:NamedTuple}
 end
 
-Market(R, timestamps, assets, prices, events) = Market(R, Ref(1), Ref(PreOpen), timestamps, assets, prices, events)
+Market(R, timestamps, assets, prices, events, warmup = 0) = Market(R, Ref(warmup+1), Ref(PreOpen), warmup+1, timestamps, assets, prices, events)
 
 function tick!(m::AbstractMarket)
     if get_clock(m) != last(m.timestamps)
@@ -65,21 +64,21 @@ function _validate_market_query(m::AbstractMarket, symbol::String, d::DateTime)
     end
 end
 
-function get_current(m::Market{<:Any, Close}, symbol::String)
+function get_current(m::Market{<:Any, <:Union{Close, Missing}}, symbol::String)
     price = get(m.prices[symbol], get_clock(m), missing)
     return ismissing(price) ? missing : get_close(price)
 end
 
-function get_current(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
+function get_current(m::Market{<:Any, <:Union{Missing, <:Union{OHLC, OHLCV}}}, symbol::String)
     prices = get(m.prices[symbol], get_clock(m), nothing)
-    if is_open(m) || m.market_state[] == Closed
+    if is_open(m) || is_closing(m) || is_closed(m)
         return get_close(prices)
     else
         return prices.open
     end
 end
 
-function get_last(m::Market{<:Any, Close}, symbol::String)
+function get_last(m::Market{<:Any, <:Union{Close, Missing}}, symbol::String)
     prices = m.prices[symbol]
     for i in (m.tick_state[]-1):-1:1
         time = m.timestamps[i]
@@ -91,7 +90,7 @@ function get_last(m::Market{<:Any, Close}, symbol::String)
     return missing
 end
 
-function get_last(m::Market{<:Any, <:Union{OHLC, OHLCV}}, symbol::String)
+function get_last(m::Market{<:Any, <:Union{Missing, <:Union{OHLC, OHLCV}}}, symbol::String)
     if is_preopen(m) || is_opening(m)
         prices = m.prices[symbol]
         for i in (m.tick_state[]-1):-1:1
@@ -133,7 +132,7 @@ function get_dividend(m::AbstractMarket, symbol::String, d::DateTime)
 end
 
 function reset!(m::AbstractMarket)
-    m.tick_state[] = 1
+    m.tick_state[] = m.start_state
     m.market_state[] = PreOpen
 end
 

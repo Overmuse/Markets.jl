@@ -1,18 +1,20 @@
 struct EODData <: MarketDataProvider
 end
 
-function generate_market(::EODData, r::TimePeriod, ::Type{Close}, warmup = 0; path = "/Users/sebastianrollen/data/NYSE/")
+function generate_data(::EODData, r, q, assets, start_date, end_date; path = "/Users/sebastianrollen/data/NYSE/")
     data_path = path * RESOLUTION_MAPPING[r]
     files = joinpath.(data_path, readdir(data_path))
-    data = reduce(vcat, @showprogress map(files) do file
-        CSV.read(file, dateformat = "d-u-Y H:M")
-    end)
-    sort!(data, (:Symbol, :Date))
-    assets = unique(data.Symbol)
-    timestamps = sort(unique(data.Date))
-    prices = Dict{String, Dict{DateTime, Float64}}()
-    @showprogress for x in groupby(data, :Symbol)
-        prices[unique(x.Symbol)[]] = Dict(d => Close(c) for (d, c) in zip(x.Date, x.Close))
+    file_dates = Date.(getindex.(files, findfirst.(r"\d{8}", files)), "yyyymmdd")
+    file_mask = map(x -> x >= start_date && x <= end_date, file_dates)
+    files = files[file_mask]
+    data_progress = Progress(length(files))
+    data = mapreduce(vcat, files) do file
+        next!(data_progress)
+        CSV.read(file, dateformat = "d-u-Y H:M", header = [:symbol, :date, :open, :high, :low, :close, :volume], skipto=2)
     end
-    Market(r, timestamps, assets, prices, Dict{String, NamedTuple}())
+    sort!(data, (:symbol, :date))
+    filter!(x -> x.symbol in assets, data)
+    symbols = data.symbol |> unique
+    groups = collect(groupby(data, :symbol))
+    Dict(asset => Dict(x.date => extract_price_data(x, q) for x in eachrow(d)) for (asset, d) in zip(symbols, groups))
 end
