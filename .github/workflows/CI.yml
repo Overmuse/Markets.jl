@@ -1,0 +1,25 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version: ['1.3']
+        os: [ubuntu-latest, macOS-latest]
+
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - uses: webfactory/ssh-agent@v0.2.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - run: git config url.git@github.com:.insteadOf https://github.com/
+      - run: git config --global user.name "RollenRegistratorBot"
+      - run: git config --global user.password "${{ secrets.PAT }}"
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: ${{ matrix.julia-version }}
+      - run: julia -e 'using Pkg; Pkg.Registry.add(RegistrySpec(url="https://github.com/JuliaRegistries/General")); Pkg.Registry.add(RegistrySpec(url="git@github.com:HakoSwede/PrivateRegistry"))'
+      - uses: julia-actions/julia-runtest@master

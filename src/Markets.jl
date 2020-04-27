@@ -26,6 +26,12 @@ import TradingBase:
     is_closed
 
 export
+    # Re-exports
+    Close,
+    OHLC,
+    OHLCV,
+    get_close,
+
     Market,
     Tick,
     BidAsk,
